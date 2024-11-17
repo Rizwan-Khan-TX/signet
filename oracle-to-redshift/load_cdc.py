@@ -108,7 +108,7 @@ def write_to_redshift(df, deleted_df, redshift_url, redshift_properties):
     delete_query="delete from "+redshift_table+" Where "+redshift_pk+" in (Select "+redshift_pk+" from "+redshift_stg_table+")" 
     spark.read.jdbc(url=redshift_url, query=delete_query, properties=redshift_properties).load() # delete records from dest table that do not exist in stg table
     
-    # no reuse this stg table for new (inserted/updated) data
+    # reuse this stg table for new (inserted/updated) data
     truncate_query = "TRUNCATE TABLE "+redshift_stg_table # Truncate stage table
     spark.read.jdbc(url=redshift_url, query=truncate_query, properties=redshift_properties).load() # Truncate stg table
     df.write.jdbc(url=redshift_url, table=redshift_stg_table, mode="overwrite", properties=redshift_properties) # load data into stage table

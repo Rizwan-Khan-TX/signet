@@ -1,10 +1,9 @@
 """
-# usage
-# for Full data load without truncating destination table
-python load_data.py F
+# for overwritting the dest table
+python load_data.py O
 
-# for Full data load with truncating destination table
-python load_data.py TF
+# for append 
+python load_data.py A
 
 # for Merge data 
 python load_data.py M
@@ -46,16 +45,11 @@ def read_from_oracle(spark, oracle_url, oracle_properties):
 
 def write_to_redshift(df, redshift_url, redshift_properties, loadaction):
     # Write DataFrame to Redshift using JDBC
-    if loadaction='F':   # F   For load full from source
+    if loadaction='O':   # O   For overwrite destination
         df.write.jdbc(url=redshift_url, table=redshift_table, mode="overwrite", properties=redshift_properties)
-    
-    elif loadaction='TF':# TF  Truncate Destination & Load Full from source
-        truncate_query = "TRUNCATE TABLE "+redshift_table
-        # I am not sure about following syntax, I hope I can use query through df.read.jdbc as follows
-        spark.read.jdbc(url=redshift_url, query=truncate_query, properties=redshift_properties).load()
-        df.write.jdbc(url=redshift_url, table=redshift_table, mode="overwrite", properties=redshift_properties)
-    
-    elif loadaction='M': # M   Merge
+    elif loadaction='A': # A   Append with destination
+        df.write.jdbc(url=redshift_url, table=redshift_table, mode="append", properties=redshift_properties)
+    elif loadaction='M': # M   Merge with destination
         truncate_query = "TRUNCATE TABLE "+redshift_stg_table # Truncate stage table
         spark.read.jdbc(url=redshift_url, query=truncate_query, properties=redshift_properties).load() # Truncate stg table
         df.write.jdbc(url=redshift_url, table=redshift_stg_table, mode="overwrite", properties=redshift_properties) # load data into stage table
